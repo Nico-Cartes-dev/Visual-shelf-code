@@ -2,9 +2,9 @@
 """
 motor.py — Motor del detector de huecos en góndolas (V4.1b), listo para usar fuera del notebook.
 
-El código de detección y de análisis de stock está COPIADO TAL CUAL del notebook detector_huecos_gondolas_V4
-(celdas 4.4, 6.2, 6.4a, 6.4b y 6.4c), para que la app web dé exactamente los mismos resultados que el notebook.
-No se edita a mano: si cambias la lógica en el notebook, vuelve a generar este archivo.
+La lógica proviene del notebook detector_huecos_gondolas_V4 (celdas 4.4, 6.2,
+6.4a, 6.4b y 6.4c). La aplicación usa este módulo para convertir las cajas del
+detector en una estimación de ocupación, un estado y una imagen anotada.
 
 Uso:
     import motor
@@ -400,6 +400,7 @@ def _stock_por_estantes(im, b, r):
     return r
 
 def analizar_cajas(im, b, s=None, n_ref=None, seed=0):
+    """Agrupa cajas xyxy en filas y estima el stock a partir de los huecos medibles."""
     r = dict(analisis="ok", motivo="", b=np.zeros((0, 4)), s=np.zeros(0), fila=np.zeros(0, int), filas=[], huecos=[], dudosos=[],
              virtuales=[], no_detectadas=[], avisos=[], stock=float("nan"), n_prod=0, unidades_faltantes=0.0)
     b = np.asarray(b, float).reshape(-1, 4); s = np.ones(len(b)) if s is None else np.asarray(s, float).reshape(-1)

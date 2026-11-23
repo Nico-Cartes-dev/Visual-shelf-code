@@ -2,16 +2,16 @@
 """
 app.py — VisualShelf: servidor web del detector de huecos en góndolas.
 
-Sirve la interfaz (carpeta static/) y una API mínima que usa motor.py (el mismo código del notebook V4.1b):
-    GET  /api/config     -> parámetros del modelo, tiendas y límites
-    POST /api/analizar   -> analiza UNA foto (JSON con la imagen en base64) y devuelve el resultado y la imagen anotada
+Sirve static/ y coordina la autenticación, el análisis de cada foto y su
+persistencia. La API guarda las imágenes en Storage y devuelve el registro
+con las métricas. Consulta docs/ARQUITECTURA.md para el flujo y las rutas.
 
 Solo usa la biblioteca estándar de Python para el servidor: no hace falta instalar Flask, FastAPI ni Gradio.
 
 Ejecutar:
     python app.py                                  # http://127.0.0.1:7860
     python app.py --modelo best.pt --parametros parametros_v4.json --puerto 7860
-Variables de entorno: MODELO, PARAMETROS, PORT, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY.
+Variables de entorno: MODELO, PARAMETROS, HOST, PORT, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY.
 """
 import argparse, base64, io, json, mimetypes, os, threading, time, traceback
 from datetime import datetime
@@ -74,6 +74,7 @@ def a_data_url(img_rgb, lado=LADO_VISOR, calidad=85):
 
 
 def analizar(payload):
+    """Ejecuta el motor para una foto y prepara las métricas y la vista anotada."""
     if not ESTADO["modelo_ok"]:
         raise RuntimeError(ESTADO["error"] or "El modelo no está cargado")
     nombre = str(payload.get("nombre") or "imagen")[:200]

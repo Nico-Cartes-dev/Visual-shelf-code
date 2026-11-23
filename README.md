@@ -12,18 +12,17 @@ La aplicación funciona en CPU; una GPU compatible puede acelerar el análisis, 
 
 ## Inicio rápido en Windows
 
-Abre PowerShell en la carpeta del proyecto (`Desarrollo`) y ejecuta:
+Abre PowerShell en la raíz del repositorio y ejecuta:
 
 ```powershell
 cd app
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-.\iniciar.ps1
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+$env:Path = "$(Resolve-Path .\.venv\Scripts);$env:Path"
+.\iniciar.ps1 --host 127.0.0.1
 ```
 
-Si PowerShell impide activar el entorno, puedes instalar las dependencias con `python -m pip install -r requirements.txt` y continuar con `./iniciar.ps1` sin activarlo.
+Estos comandos usan el entorno virtual sin ejecutar su script de activación. Si tienes varias versiones de Python instaladas, usa `py -3.11 -m venv .venv` para crearlo.
 
 Cuando aparezca el mensaje de servidor iniciado, visita [http://127.0.0.1:7860](http://127.0.0.1:7860). Detén el servidor con `Ctrl+C`.
 
@@ -51,7 +50,14 @@ Si inicias con `python app.py` en vez de `iniciar.ps1`, primero define `SUPABASE
 4. El resultado y las imágenes original y anotada se guardan en Supabase. Las fotografías se descargan mediante solicitudes autenticadas.
 5. El historial compartido permite consultar análisis, filtrar alertas, revisar imágenes y exportar los registros cargados a CSV. También incluye resumen e importación del historial local.
 
-El procesamiento usa un modelo compartido y ejecuta una inferencia a la vez por instancia. Si está ocupado, la aplicación solicita reintentar la foto. En ejecución local, el servidor escucha por defecto en `0.0.0.0:7860`; para un despliegue público se necesita HTTPS y un proxy adecuado.
+El procesamiento usa un modelo compartido y ejecuta una solicitud de inferencia a la vez por instancia. Si está ocupado, la aplicación solicita reintentar la foto. El inicio rápido limita la escucha al equipo local. Sin `--host` ni la variable `HOST`, el servidor escucha en `0.0.0.0`.
+
+## Algoritmos implementados
+
+- **Detección de productos.** YOLO predice cajas y puntuaciones de confianza. El motor puede repetir la detección por mosaicos solapados y fusionar cajas duplicadas con supresión no máxima (NMS) basada en la intersección sobre unión (IoU).
+- **Identificación de repisas y filas.** OpenCV busca líneas de repisa con Canny y la transformada de Hough. El motor usa RANSAC sobre las bases de las cajas para estimar filas que no puede asignar a una repisa.
+- **Estimación de ocupación visible.** El motor compara los espacios entre cajas con el ancho de los productos cercanos. Usa textura y reflejos para descartar espacios ambiguos y estima cuántas unidades cabrían en los huecos medibles.
+- **Decisión.** El motor compara el stock estimado con el umbral de reposición y considera los avisos de detección y calidad. El porcentaje representa la ocupación estimada en la foto. [Documentación técnica](docs/ARQUITECTURA.md)
 
 ## Estructura del proyecto
 
@@ -67,10 +73,12 @@ El procesamiento usa un modelo compartido y ejecuta una inferencia a la vez por 
 | `app/iniciar.ps1` | Arranque local en Windows. |
 | `app/Dockerfile` | Imagen Docker de la aplicación. |
 | `app/entrenar.py` | Entrenamiento o ajuste del modelo con imágenes etiquetadas. |
+| `entrenar.py` y `evaluar.py` | Herramientas de la raíz para ajustar y evaluar un detector con etiquetas YOLO. |
+| `docs/ARQUITECTURA.md` | Flujo de datos, algoritmos, API y persistencia. |
 | `app/ENTRENAMIENTO.md` | Preparación de datos y opciones de entrenamiento y evaluación. |
 | `app/CENTRALIZACION.md` | Configuración de usuarios, tiendas, permisos, operación y publicación. |
 
-En la raíz también hay scripts y datos de entrenamiento anteriores (`entrenar.py`, `evaluar.py`, `ENTRENAMIENTO.md` y carpetas de imágenes/resultados). La aplicación web actual está dentro de `app`.
+Las fotos etiquetadas se proporcionan por separado. La aplicación web y sus pesos de inicio están en `app/`.
 
 ## Usuarios y Supabase
 
@@ -92,6 +100,7 @@ python app.py --modelo "entrenamientos\ajuste_xxxxx\modelo\weights\best.pt"
 
 ## Documentación adicional
 
+- [Documentación técnica](docs/ARQUITECTURA.md)
 - [Configuración centralizada y publicación](app/CENTRALIZACION.md)
 - [Entrenamiento y evaluación](app/ENTRENAMIENTO.md)
 - [README de la aplicación](app/README.md)

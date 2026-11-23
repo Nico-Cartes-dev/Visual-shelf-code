@@ -28,6 +28,8 @@ Dashboard; una cuenta sin asignaciones no tiene acceso a datos de tiendas.
 
 Consulta [CENTRALIZACION.md](CENTRALIZACION.md) para configurar usuarios,
 permisos, recuperacion de acceso, Docker, publicacion y pruebas.
+Consulta la [documentación técnica](../docs/ARQUITECTURA.md) para seguir el
+flujo de una foto y entender cómo el motor estima el stock.
 
 ## Archivos
 
